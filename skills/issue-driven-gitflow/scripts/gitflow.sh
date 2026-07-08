@@ -24,7 +24,7 @@
 #                     "Claude Opus 4.8 (1M context) <noreply@anthropic.com>")
 set -euo pipefail
 
-COAUTHOR="${CLAUDE_COAUTHOR:-Claude <noreply@anthropic.com>}"
+COAUTHOR=""
 TYPES='feat|fix|chore|docs|refactor|test|perf'
 
 die()      { echo "gitflow: $*" >&2; exit 1; }
@@ -74,7 +74,7 @@ Closes #${issue}.
 ## Test plan
 <how it was verified — prefer an automated test>
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)"
+
     fi
     gh pr create --title "$title" --body "$body"
     echo "gitflow: PR opened for '$title' (Closes #${issue})"
