@@ -9,14 +9,24 @@ description: >-
   Y", "get this project going"). It guarantees every change traces to a GitHub
   issue, gets a reviewed-and-approved plan before any code is written, lands on
   a `type/description` branch via a squash-merged PR with Conventional Commits,
-  and never edits `main` directly. Do NOT
-  trigger for purely informational or read-only requests that change nothing —
-  e.g. "what's the git command for X", "explain this function", "show me the
-  diff", "what branch am I on" — just answer those directly.
+  and never edits `main` directly. Do NOT trigger for purely informational or
+  read-only requests that change nothing — e.g. "what's the git command for X",
+  "explain this function", "show me the diff", "what branch am I on" — just
+  answer those directly.
+allowed-tools:
+  - "Bash(git:*)"
+  - "Bash(gh:*)"
+  - "Bash(./gitflow.sh:*)"
+  - "Bash(./skills/issue-driven-github-flow/scripts/gitflow.sh:*)"
+compatibility:
+  required-tools:
+    - git
+    - gh
+  note: "Requires an authenticated GitHub CLI (`gh`) and a git repository with a GitHub remote."
 license: MIT
 metadata:
   author: andybaran
-  version: "1.0"
+  version: "1.1"
 ---
 
 # Issue-Driven GitHub Flow
@@ -29,9 +39,10 @@ review load low.
 
 The workflow has two layers that always apply together:
 
-1. **The gitflow** — how branches, commits, and PRs are shaped (mechanical, fast).
-2. **The orchestration** — how an issue becomes a reviewed plan and then code,
-   using three distinct agent roles (the part that prevents half-baked work).
+1. **The gitflow** — how branches, commits, PRs, CI gates, and rollback are
+   shaped (mechanical, fast).
+2. **The orchestration** — how an issue becomes a reviewed plan, reviewed code,
+   and then a human-approved merge using distinct agent roles.
 
 ## The non-negotiables (and why)
 
@@ -56,6 +67,15 @@ mechanism in service of them.
   repo has no test harness at all, don't quietly settle for "manual verification"
   — **stop and ask the user** whether they'd like a test harness set up first.
   That's a real decision with cost, and it's theirs to make.
+- **Verification before completion.** Never claim "tests pass", "fixed", "done",
+  "CI is green", or any equivalent success state unless you have just run the
+  relevant check and can show the real output. No proof → not done. If a check
+  cannot be run, report that fact instead of implying success.
+- **Never commit secrets.** Do not commit API keys, tokens, passwords, private
+  keys, `.env` files containing credentials, or generated secret material. Use
+  environment variables, GitHub Actions Secrets, Dependabot/organization secrets,
+  or an approved secret manager. Recommend secret-scanning push protection; see
+  [security.md](references/security.md).
 
 **When NOT to use this:** purely informational or read-only requests — "what's
 the git command to list branches", "explain this code", "what changed in this
@@ -73,9 +93,35 @@ gh repo view --json nameWithOwner,defaultBranchRef -q '.nameWithOwner, .defaultB
 gh issue list --state open --json number --jq 'length'   # how many open issues?
 ```
 
+Also inspect repository governance before changing files:
+
+```bash
+# CODEOWNERS can live in any of these standard locations.
+for f in .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS; do
+  [ -f "$f" ] && echo "CODEOWNERS: $f"
+done
+
+# Detect default-branch protection without mutating settings.
+default="$(gh repo view --json defaultBranchRef -q '.defaultBranchRef.name')"
+if gh api "repos/{owner}/{repo}/branches/$default/protection" --silent >/dev/null 2>&1; then
+  echo "default branch '$default' has branch protection"
+else
+  echo "default branch '$default' has no detected branch protection"
+fi
+```
+
 Decide:
+
 - **Not a git repo / no GitHub remote?** Tell the user what's missing and offer
   to `git init` / `gh repo create`. Don't fabricate a workflow on top of nothing.
+- **CODEOWNERS found?** Warn that paths matching `CODEOWNERS` require code-owner
+  review before merge. This repository's ownership file is
+  [../../.github/CODEOWNERS](../../.github/CODEOWNERS) when present.
+- **Default branch unprotected?** Document the risk and **offer** to apply
+  sensible branch protection — PR review, required status checks, code-owner
+  review when CODEOWNERS exists, and blocked force-push/deletion — but do not
+  change settings without explicit user consent. Use
+  [branch-protection.md](references/branch-protection.md) for the exact commands.
 - **More than 3 open issues?** This work belongs in a **GitHub Project** (see
   "Projects" below) so the issues are tracked together, not scattered.
 
@@ -85,9 +131,10 @@ If the user's request doesn't reference an existing issue, create one. The
 issue **description must fully capture the task** — a future agent (or person)
 should be able to act on it without re-reading the chat.
 
-Pass the body on **stdin via a quoted heredoc** (`<<'EOF'`) rather than `--body "..."`. The
-description is markdown — code fences, backticks, `$`, quotes — and a quoted heredoc passes all of it
-through literally, where an inline `--body "..."` lets the shell mangle it or end the string early.
+Pass the body on **stdin via a quoted heredoc** (`<<'EOF'`) rather than
+`--body "..."`. The description is markdown — code fences, backticks, `$`,
+quotes — and a quoted heredoc passes all of it through literally, where an
+inline `--body "..."` lets the shell mangle it or end the string early.
 
 ```bash
 gh issue create --title "<concise imperative title>" --body-file - <<'EOF'
@@ -104,7 +151,8 @@ discussion.
 This is the heart of the workflow. Three roles, kept deliberately separate so
 the reviewer brings genuinely fresh eyes rather than defending the author's
 choices. Dispatch each as its own subagent — see
-`references/agent-prompts.md` for the full role prompts to hand each one.
+[agent-prompts.md](references/agent-prompts.md) for the full role prompts to
+hand each one.
 
 The loop, all conducted **in the issue's comments** (so the reasoning is durable
 and visible, not trapped in a chat):
@@ -122,9 +170,10 @@ and visible, not trapped in a chat):
 3. If changes are requested, the planning agent revises in a new comment. Repeat
    until the review agent posts `**Verdict: APPROVED**`.
 
-Post comments by piping the body on **stdin via a quoted heredoc** — plans and reviews are full of
-code fences, backticks, and `$`, and `--body "..."` would let the shell expand or truncate them. The
-quoted `<<'EOF'` delimiter disables all expansion, so the markdown lands exactly as written:
+Post comments by piping the body on **stdin via a quoted heredoc** — plans and
+reviews are full of code fences, backticks, and `$`, and `--body "..."` would let
+the shell expand or truncate them. The quoted `<<'EOF'` delimiter disables all
+expansion, so the markdown lands exactly as written:
 
 ```bash
 gh issue comment <number> --body-file - <<'EOF'
@@ -141,52 +190,136 @@ stop and bring the disagreement to the user.
 
 Only once the issue carries an approved plan. Use a **separate implementation
 agent** (fresh context, told to follow the approved plan verbatim — see
-`references/agent-prompts.md`). The implementation agent owns the mechanical
-gitflow, and the mechanical parts are scripted so they can't drift.
+[agent-prompts.md](references/agent-prompts.md)). The implementation agent owns
+the mechanical gitflow, and the mechanical parts are scripted so they can't drift.
 
 ### Use the bundled helper
 
-`scripts/gitflow.sh` encapsulates the three fiddly, repeated steps — cutting a
-correctly-named branch off an up-to-date default branch, committing with a
-Conventional Commit, and opening a squash-ready PR. It validates its inputs
-(rejects a malformed branch name or a non-Conventional commit) so mistakes fail fast
-instead of landing in history. Reach for it rather than retyping raw `git`/`gh`:
+`scripts/gitflow.sh` encapsulates the fiddly, repeated steps — cutting a
+correctly named branch, committing with a Conventional Commit, opening a draft
+PR, marking it ready later, and packaging the diff for review. It validates its
+inputs so mistakes fail fast instead of landing in history. Reach for it rather
+than retyping raw `git`/`gh`:
 
 ```bash
-SKILL=path/to/issue-driven-github-flow        # this skill's directory
+SKILL=skills/issue-driven-github-flow
 
-# 1. Branch — syncs the default branch, then cuts type/description off it
-"$SKILL/scripts/gitflow.sh" branch feat/add-csv-export
+# Branch — syncs the default branch, then cuts type/N-desc off it.
+"$SKILL/scripts/gitflow.sh" branch feat/42-add-csv-export
 
-# ... make the changes the approved plan describes, then write/run the tests ...
+# ... make only the changes the approved plan describes, then write/run tests ...
 git add -A
 
-# 2. Commit — Conventional message + "Closes #42."
+# Commit — Conventional message + "Closes #42." + Copilot co-author trailer.
 "$SKILL/scripts/gitflow.sh" commit "feat(export): add CSV export for reports" 42
 
-# 3. PR — pushes and opens a squash-ready PR (title is the squash commit)
+# PR — fetches origin, refuses if this branch is behind the default branch,
+# pushes, and opens a DRAFT PR by default.
 "$SKILL/scripts/gitflow.sh" pr "feat(export): add CSV export for reports" 42
 ```
 
 Pick `type` (∈ `feat|fix|chore|docs|refactor|test|perf`) to match the work and a
-hyphenated description that reads cleanly: `feat/oauth-login`,
-`fix/null-deref-on-empty-cart`, `chore/bump-deps`. To supply a richer PR body,
-pass a file: `gitflow.sh pr "<title>" 42 /tmp/pr-body.md`.
+hyphenated description that reads cleanly. Prefer issue-numbered branch names:
+`feat/42-oauth-login`, `fix/87-null-deref-on-empty-cart`,
+`chore/105-bump-deps`. The helper still accepts legacy `type/description`, but
+`type/N-desc` is the durable convention.
 
-Before opening the PR, **run the tests** the plan called for and confirm they
-pass — the PR's test plan should describe a green automated check, not a promise.
+The helper's `pr` subcommand is intentionally conservative: it fetches the
+remote default branch and stops if the work branch is behind it. Sync with rebase
+or merge, resolve conflicts, re-run verification, and only then retry the PR.
+It opens a **draft** PR; do not mark it ready until Step 3.5 is satisfied. To
+supply a richer body, pass a project-local body file that you delete before
+commit (for example `.gitflow-pr-body.md`) rather than writing under `/tmp`.
+
+Before opening the PR, **run the tests** the plan called for and capture the real
+output. The PR's test plan should describe a green automated check, not a promise.
+
+## Step 3.5 — Code review
+
+After implementation and local verification, dispatch the blocking **🔬
+code-review agent** on the PR diff before marking the PR ready or merging. Use
+[code-reviewer.md](references/code-reviewer.md) and the role in
+[agent-prompts.md](references/agent-prompts.md) instead of recreating the prompt.
+
+Suggested review package flow:
+
+```bash
+base="$(git merge-base HEAD origin/$(gh repo view --json defaultBranchRef -q '.defaultBranchRef.name'))"
+head="$(git rev-parse HEAD)"
+skills/issue-driven-github-flow/scripts/gitflow.sh review-package "$base" "$head" .gitflow-review-package.txt
+```
+
+The code-review agent posts a PR review with `**Verdict: APPROVED**` or
+`**Verdict: CHANGES REQUESTED**`.
+
+- **Critical** or **Important** findings are blocking. They loop back to the
+  implementation agent for the smallest safe fix, followed by the relevant
+  verification and another code-review pass.
+- **Minor** findings are non-blocking unless the human decides otherwise.
+- The implementer uses [receiving-code-review.md](references/receiving-code-review.md)
+  to triage feedback rigorously rather than blindly applying suggestions.
+- The human gives final merge approval. An agent may prepare the PR, but it does
+  not override human approval.
+
+Only after no Critical or Important findings remain — or the human explicitly
+waives them on the PR — may the PR be marked ready:
+
+```bash
+skills/issue-driven-github-flow/scripts/gitflow.sh ready
+```
 
 ## Step 4 — Land and clean up
 
-Squash-merge, then leave the repo tidy and ready for the next issue:
+Before squash-merge, require evidence that the PR is safe to land:
+
+1. The PR template checklist is complete; see
+   [../../.github/pull_request_template.md](../../.github/pull_request_template.md).
+2. The code-review agent has an approving verdict or every blocking finding has
+   an explicit human waiver.
+3. If the repository has CI, the checks are green. This repository's CI workflow
+   is [../../.github/workflows/ci.yml](../../.github/workflows/ci.yml); check names
+   are repo-specific, so use `gh pr checks` to read the actual current contexts.
 
 ```bash
+gh pr checks --watch
+# Only after green checks and human approval:
 gh pr merge --squash --delete-branch
+```
+
+After merge, sync the default branch and confirm the linked issue closed (the
+`Closes #N` footer does this automatically on merge). If it didn't, close it with
+a comment pointing at the merged PR.
+
+```bash
 git switch main && git pull --ff-only
 ```
 
-Confirm the linked issue closed (the `Closes #N` does this automatically on
-merge). If it didn't, close it with a comment pointing at the merged PR.
+Rollback is by revert, not force-push. If the squash commit must be undone, cut a
+new branch, run `git revert <squash-sha>`, verify, and open a revert PR for
+review. Never force-push or rewrite `main` to roll back a landed PR.
+
+## Parallel execution with worktrees
+
+When multiple approved issues can proceed independently, use separate git
+worktrees so each issue has its own branch, working tree, verification output,
+and PR. Follow [worktrees.md](references/worktrees.md): run baseline tests on the
+clean branch first, ensure project-local worktree directories are gitignored, and
+only clean up worktrees that this skill created.
+
+## Definition of done
+
+A change is done only when all of these are true:
+
+- The issue exists and the implementation traces to it.
+- The plan-review loop ended with `**Verdict: APPROVED**`.
+- Local verification was run and real output is available.
+- A draft PR exists with a Conventional Commit title and `Closes #N`.
+- The 🔬 code-review step produced an approving verdict, or all Critical /
+  Important findings were fixed or explicitly waived by the human.
+- CI is green when the repository has CI (`gh pr checks`).
+- The [PR template checklist](../../.github/pull_request_template.md) is complete,
+  including code review, tests/CI, no secrets, and squash-merge intent.
+- The human has approved merge.
 
 ## Projects (when >3 open issues)
 
@@ -200,22 +333,32 @@ gh project item-add <project-number> --owner "@me" --url <issue-url>
 ```
 
 Tell the user the project URL. New issues in this workstream get added to the
-project as they're created. See `references/projects.md` for moving items across
-status columns and linking the project to the repo.
+project as they're created. See [projects.md](references/projects.md) for moving
+items across status columns and linking the project to the repo.
 
 ## Quick reference
 
 | Situation | Do this |
 |---|---|
-| On `main`, asked to edit | Auto-create `type/description` branch, then proceed |
+| On `main`, asked to edit | Auto-create `type/N-desc` branch, then proceed |
 | Request with no issue | `gh issue create` with full task body first |
+| CODEOWNERS exists | Warn that owned paths require code-owner review |
+| Default branch unprotected | Offer branch protection from [branch-protection.md](references/branch-protection.md); require consent before mutation |
 | >3 open issues | Create/append to a GitHub Project |
+| Multiple independent issues | Use worktrees via [worktrees.md](references/worktrees.md) |
 | Plan written | Hand to review agent; iterate until `Verdict: APPROVED` |
 | Approved plan | Dispatch implementation agent |
-| Code done | Conventional commit → squash-merge PR |
-| PR merged | `--delete-branch`, sync `main` |
+| Code done | Run verification, commit, open a draft PR |
+| Draft PR open | Dispatch 🔬 code-review agent; require a verdict |
+| Critical/Important review finding | Loop back to implementation; re-verify and re-review |
+| PR ready to land | Require human approval and green `gh pr checks` when CI exists |
+| PR merged | `--delete-branch`, sync `main`, confirm issue closed |
+| Bad squash merge | `git revert <squash-sha>` on a new branch; open a revert PR |
+| Secret requested | Refuse to commit it; use [security.md](references/security.md) |
 
-The detailed role prompts for the three agents live in
-`references/agent-prompts.md` — read it before dispatching them. The mechanical
-git/gh steps are bundled in `scripts/gitflow.sh` (branch / commit / pr); the
-implementation agent should use it rather than retyping raw commands.
+The detailed role prompts for the agents live in
+[agent-prompts.md](references/agent-prompts.md) — read it before dispatching
+them. The mechanical git/gh steps are bundled in
+[scripts/gitflow.sh](scripts/gitflow.sh) (`branch`, `commit`, `pr`, `ready`,
+`review-package`); the implementation agent should use it rather than retyping
+raw commands.
