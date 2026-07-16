@@ -1,8 +1,0 @@
-* feat/items-pagination
-  main
-  remotes/origin/HEAD -> origin/main
-  remotes/origin/feat/items-pagination
-  remotes/origin/main
----LOG---
-3736bf2 feat(items): add limit/offset pagination to listItems
-1880a90 chore: seed eval fixture

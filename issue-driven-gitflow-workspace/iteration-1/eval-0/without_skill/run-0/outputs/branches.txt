@@ -1,7 +1,0 @@
-* feature/dark-mode-toggle
-  main
-  remotes/origin/feature/dark-mode-toggle
-  remotes/origin/main
-
-14808aa Add dark-mode toggle to settings page
-2910485 Add baseline settings page

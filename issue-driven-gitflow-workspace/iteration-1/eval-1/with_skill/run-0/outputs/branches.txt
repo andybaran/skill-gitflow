@@ -1,9 +1,0 @@
-* fix/nan-total-on-empty-cart
-  main
-  remotes/origin/HEAD -> origin/main
-  remotes/origin/fix/nan-total-on-empty-cart
-  remotes/origin/main
-
-=== git log --oneline -15 ===
-e8f912f fix(cart): seed cartTotal reduce with 0 to fix NaN on empty cart
-b831366 chore: seed cart module with test harness

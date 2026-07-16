@@ -1,0 +1,12 @@
+{
+  "$schema": "https://skills.sh/schemas/skills.sh.schema.json",
+  "groupings": [
+    {
+      "title": "Gitflow",
+      "description": "Issue-driven GitHub Flow with multi-agent planning.",
+      "skills": [
+        "issue-driven-gitflow"
+      ]
+    }
+  ]
+}

@@ -1,8 +1,0 @@
-* feature/1-dark-mode-toggle
-  main
-  remotes/origin/HEAD -> origin/main
-  remotes/origin/feature/1-dark-mode-toggle
-  remotes/origin/main
----
-59753b8 Add dark-mode toggle to settings page
-66a2b79 chore: seed eval fixture

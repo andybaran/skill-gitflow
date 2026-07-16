@@ -1,6 +1,0 @@
-CLONE_FAILED: `gh repo clone andybaran/gfeval-negative-ws /tmp/gfeval-run/negative-with`
-returned "ERROR: Repository not found." (exit 128) — the repository is not
-accessible to this account, so there is no local clone to run `git branch -a` against.
-
-This did not affect the response, since the user's request was an informational
-git question that does not depend on the repository's contents.

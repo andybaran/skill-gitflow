@@ -8,11 +8,15 @@ description: >-
   "gitflow" (e.g. "let's build X", "fix this bug", "add a feature", "start on
   Y", "get this project going"). It guarantees every change traces to a GitHub
   issue, gets a reviewed-and-approved plan before any code is written, lands on
-  a `type/description` branch via a squash-merged PR with Conventional Commits
-  and a Claude co-author trailer, and never edits `main` directly. Do NOT
+  a `type/description` branch via a squash-merged PR with Conventional Commits,
+  and never edits `main` directly. Do NOT
   trigger for purely informational or read-only requests that change nothing —
   e.g. "what's the git command for X", "explain this function", "show me the
   diff", "what branch am I on" — just answer those directly.
+license: MIT
+metadata:
+  author: andybaran
+  version: "1.0"
 ---
 
 # Issue-Driven GitHub Flow
@@ -143,9 +147,9 @@ gitflow, and the mechanical parts are scripted so they can't drift.
 ### Use the bundled helper
 
 `scripts/gitflow.sh` encapsulates the three fiddly, repeated steps — cutting a
-correctly-named branch off an up-to-date default branch, committing with the
-right trailer, and opening a squash-ready PR. It validates its inputs (rejects a
-malformed branch name or a non-Conventional commit) so mistakes fail fast
+correctly-named branch off an up-to-date default branch, committing with a
+Conventional Commit, and opening a squash-ready PR. It validates its inputs
+(rejects a malformed branch name or a non-Conventional commit) so mistakes fail fast
 instead of landing in history. Reach for it rather than retyping raw `git`/`gh`:
 
 ```bash
@@ -157,7 +161,7 @@ SKILL=path/to/issue-driven-gitflow        # this skill's directory
 # ... make the changes the approved plan describes, then write/run the tests ...
 git add -A
 
-# 2. Commit — Conventional message + "Closes #42." + the co-author trailer
+# 2. Commit — Conventional message + "Closes #42."
 "$SKILL/scripts/gitflow.sh" commit "feat(export): add CSV export for reports" 42
 
 # 3. PR — pushes and opens a squash-ready PR (title is the squash commit)
@@ -166,10 +170,8 @@ git add -A
 
 Pick `type` (∈ `feat|fix|chore|docs|refactor|test|perf`) to match the work and a
 hyphenated description that reads cleanly: `feat/oauth-login`,
-`fix/null-deref-on-empty-cart`, `chore/bump-deps`. The co-author trailer defaults
-to `Claude <noreply@anthropic.com>`; set `CLAUDE_COAUTHOR` to include the exact
-model (e.g. `Claude Opus 4.8 (1M context) <noreply@anthropic.com>`). To supply a
-richer PR body, pass a file: `gitflow.sh pr "<title>" 42 /tmp/pr-body.md`.
+`fix/null-deref-on-empty-cart`, `chore/bump-deps`. To supply a richer PR body,
+pass a file: `gitflow.sh pr "<title>" 42 /tmp/pr-body.md`.
 
 Before opening the PR, **run the tests** the plan called for and confirm they
 pass — the PR's test plan should describe a green automated check, not a promise.
@@ -210,7 +212,7 @@ status columns and linking the project to the repo.
 | >3 open issues | Create/append to a GitHub Project |
 | Plan written | Hand to review agent; iterate until `Verdict: APPROVED` |
 | Approved plan | Dispatch implementation agent |
-| Code done | Conventional commit + co-author trailer → squash-merge PR |
+| Code done | Conventional commit → squash-merge PR |
 | PR merged | `--delete-branch`, sync `main` |
 
 The detailed role prompts for the three agents live in

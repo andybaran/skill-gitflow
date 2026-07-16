@@ -1,8 +1,0 @@
-* fix/empty-cart-total
-  main
-  remotes/origin/HEAD -> origin/main
-  remotes/origin/fix/empty-cart-total
-  remotes/origin/main
----
-43c5a25 fix(cart): return 0 for empty cart total
-4ff8a10 chore: seed eval fixture

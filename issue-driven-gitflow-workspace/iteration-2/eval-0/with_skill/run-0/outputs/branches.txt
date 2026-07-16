@@ -1,9 +1,0 @@
-* feat/dark-mode-toggle
-  main
-  remotes/origin/HEAD -> origin/main
-  remotes/origin/feat/dark-mode-toggle
-  remotes/origin/main
-
-=== git log --oneline -15 ===
-76ab274 feat(settings): add dark-mode toggle
-36b29ca chore: seed eval fixture

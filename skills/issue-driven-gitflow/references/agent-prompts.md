@@ -84,8 +84,7 @@ output as **issue comments** (planner/reviewer) or **a branch + PR**
 > A plan for this issue has been reviewed and APPROVED — follow it.
 >
 > Use the bundled `scripts/gitflow.sh` for the mechanical git/gh steps — it
-> validates inputs (branch name, Conventional Commit) and applies the co-author
-> trailer and PR footer for you, so they can't drift.
+> validates inputs (branch name, Conventional Commit) so they can't drift.
 >
 > 1. Read the issue, the approved plan, and the review: `gh issue view {N} --comments`.
 > 2. Cut the branch: `scripts/gitflow.sh branch <type>/<description>`
@@ -96,8 +95,7 @@ output as **issue comments** (planner/reviewer) or **a branch + PR**
 > 4. Write and RUN the automated test the plan called for; confirm it passes.
 > 5. Commit: `git add -A` then
 >    `scripts/gitflow.sh commit "<type(scope): summary>" {N}`
->    (adds `Closes #{N}.` and the co-author trailer; set `CLAUDE_COAUTHOR` to
->    include the exact model name if you want it).
+>    (adds `Closes #{N}.`).
 > 6. Open the PR: `scripts/gitflow.sh pr "<conventional title>" {N}`
 >    (the title becomes the squash commit). Its test plan should describe the
 >    green automated check from step 4, not a promise.

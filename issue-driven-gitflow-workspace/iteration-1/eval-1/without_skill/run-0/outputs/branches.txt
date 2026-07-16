@@ -1,8 +1,0 @@
-  baseline
-* fix/empty-cart-nan
-  main
-  remotes/origin/baseline
-  remotes/origin/fix/empty-cart-nan
---- git log ---
-1a48c49 Fix cart total returning NaN on empty cart
-8dbf708 Initial cart module with NaN-on-empty-cart bug

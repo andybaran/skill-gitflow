@@ -1,8 +1,0 @@
-* fix/empty-cart-nan-total
-  main
-  remotes/origin/HEAD -> origin/main
-  remotes/origin/fix/empty-cart-nan-total
-  remotes/origin/main
----
-d84865f fix: total empty cart as 0 instead of NaN/throw
-0d30b67 chore: seed eval fixture

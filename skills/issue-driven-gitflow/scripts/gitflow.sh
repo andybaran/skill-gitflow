@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # gitflow.sh — the repetitive, easy-to-get-wrong git/gh steps of the
 # issue-driven GitHub Flow, in one place so every run doesn't reinvent them
-# (and can't drift on branch naming, the commit trailer, or the PR footer).
+# (and can't drift on branch naming or PR shape).
 #
 # Usage:
 #   gitflow.sh branch <type>/<description>
@@ -10,7 +10,7 @@
 #
 #   gitflow.sh commit "<type(scope): summary>" <issue-number>
 #       Commit currently-staged changes with a Conventional Commit message, a
-#       "Closes #<issue>." line, and the Claude co-author trailer. Refuses a
+#       "Closes #<issue>." line only. Refuses a
 #       message that isn't a Conventional Commit, or an empty stage.
 #
 #   gitflow.sh pr "<title>" <issue-number> [body-file]
@@ -18,13 +18,8 @@
 #       Title should itself be a Conventional Commit (it becomes the squash
 #       commit). Pass a body-file to supply your own PR body.
 #
-# Env:
-#   CLAUDE_COAUTHOR   override the co-author trailer value
-#                     (default: "Claude <noreply@anthropic.com>"; set e.g. to
-#                     "Claude Opus 4.8 (1M context) <noreply@anthropic.com>")
 set -euo pipefail
 
-COAUTHOR=""
 TYPES='feat|fix|chore|docs|refactor|test|perf'
 
 die()      { echo "gitflow: $*" >&2; exit 1; }
@@ -52,8 +47,8 @@ case "$cmd" in
       || die "message must be a Conventional Commit, e.g. 'feat(auth): add login' (got: $msg)"
     need_repo
     git diff --cached --quiet && die "nothing staged — 'git add' your changes first"
-    git commit -m "$msg" -m "Closes #${issue}." -m "Co-Authored-By: ${COAUTHOR}"
-    echo "gitflow: committed (Closes #${issue}; co-author: ${COAUTHOR})"
+    git commit -m "$msg" -m "Closes #${issue}."
+    echo "gitflow: committed (Closes #${issue})"
     ;;
 
   pr)
@@ -73,8 +68,7 @@ Closes #${issue}.
 
 ## Test plan
 <how it was verified — prefer an automated test>
-
-
+"
     fi
     gh pr create --title "$title" --body "$body"
     echo "gitflow: PR opened for '$title' (Closes #${issue})"

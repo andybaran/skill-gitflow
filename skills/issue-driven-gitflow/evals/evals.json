@@ -5,7 +5,7 @@
       "id": 0,
       "name": "feature-from-main",
       "prompt": "Add a dark-mode toggle to the settings page.",
-      "expected_output": "Recognizes it's on main, creates a GitHub issue with a full task body, runs a planning->review->approval loop in issue comments, branches feat/<desc> off up-to-date main, commits with a Conventional Commit + Co-Authored-By: Claude trailer, and opens a squash-ready PR that Closes the issue.",
+      "expected_output": "Recognizes it's on main, creates a GitHub issue with a full task body, runs a planning->review->approval loop in issue comments, branches feat/<desc> off up-to-date main, commits with a Conventional Commit, and opens a squash-ready PR that Closes the issue.",
       "files": [],
       "assertions": [
         "Creates a GitHub issue capturing the task",
@@ -13,7 +13,6 @@
         "Issue carries a review comment with an explicit 'Verdict: APPROVED'",
         "Work branch follows type/description naming (feat|fix|chore|docs|refactor|test)/...",
         "At least one commit uses Conventional Commit format",
-        "A commit includes the Co-Authored-By: Claude trailer",
         "A pull request was opened",
         "No GitHub Project was created (only 1 issue, below the >3 threshold)"
       ]
@@ -22,7 +21,7 @@
       "id": 1,
       "name": "bugfix-flow",
       "prompt": "Fix the bug where the cart total shows NaN on an empty cart, it's in src/cart.js.",
-      "expected_output": "Creates an issue describing the NaN bug, gets a reviewed+approved plan in comments, branches fix/<desc>, fixes src/cart.js, commits as a Conventional Commit with the co-author trailer, opens a squash PR closing the issue.",
+      "expected_output": "Creates an issue describing the NaN bug, gets a reviewed+approved plan in comments, branches fix/<desc>, fixes src/cart.js, commits as a Conventional Commit, opens a squash PR closing the issue.",
       "files": [],
       "assertions": [
         "Creates a GitHub issue capturing the task",
@@ -30,7 +29,6 @@
         "Issue carries a review comment with an explicit 'Verdict: APPROVED'",
         "Work branch follows type/description naming (feat|fix|chore|docs|refactor|test)/...",
         "At least one commit uses Conventional Commit format",
-        "A commit includes the Co-Authored-By: Claude trailer",
         "A pull request was opened",
         "No GitHub Project was created (only 1 issue, below the >3 threshold)"
       ]
@@ -48,7 +46,6 @@
         "Issue carries a review comment with an explicit 'Verdict: APPROVED'",
         "Work branch follows type/description naming",
         "At least one commit uses Conventional Commit format",
-        "A commit includes the Co-Authored-By: Claude trailer",
         "A pull request was opened"
       ]
     },
@@ -76,7 +73,7 @@
         "Works the first issue through a planning-agent plan comment",
         "Issue carries a review comment with an explicit 'Verdict: APPROVED'",
         "Work branch follows type/description naming",
-        "At least one commit uses Conventional Commit format + Co-Authored-By: Claude trailer",
+        "At least one commit uses Conventional Commit format",
         "A pull request was opened"
       ]
     }
