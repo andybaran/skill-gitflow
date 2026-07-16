@@ -168,7 +168,27 @@ and visible, not trapped in a chat):
    `## 🔍 Review (review agent)`. It ends with an explicit verdict line:
    `**Verdict: APPROVED**` or `**Verdict: CHANGES REQUESTED**`.
 3. If changes are requested, the planning agent revises in a new comment. Repeat
-   until the review agent posts `**Verdict: APPROVED**`.
+   until the review agent posts `**Verdict: APPROVED**` or a hard stop below
+   forces human escalation.
+
+**Orchestrator loop bound:** the orchestrator owns enforcement, not the
+subagents. Maintain a visible counter in the issue comments or dispatch notes
+(`Plan-review round 1/3`, then `2/3`, then `3/3`). One round is one planning
+comment plus the review verdict for it. The plan ↔ review loop is capped at
+**max 3 rounds**; never start a fourth review round.
+
+Stop early and escalate instead of burning remaining rounds when there is no
+substantive progress. Compare the latest plan/review against the prior round:
+if the reviewer repeats the same objection without new information, or the
+planner's revision does not materially change the plan in response, treat the
+loop as non-converged. This is a judgment about substantive change, not exact
+text equality.
+
+On cap hit or no-progress, STOP and post a concise issue comment prefixed, for
+example, `## ⛔ Escalation: plan review did not converge`. Summarize the
+unresolved disagreement, include the final round counter (`3/3` when capped),
+and hand off to the human for a decision. Never silently loop, silently give up,
+or begin implementation without an approved plan or explicit human direction.
 
 Post comments by piping the body on **stdin via a quoted heredoc** — plans and
 reviews are full of code fences, backticks, and `$`, and `--body "..."` would let
@@ -183,8 +203,8 @@ EOF
 
 Don't skip the loop even for "small" changes — the review agent approving a
 one-line plan in a single round costs almost nothing, and the discipline is what
-keeps the *big* changes honest. Cap it at ~3 rounds; if they can't converge,
-stop and bring the disagreement to the user.
+keeps the *big* changes honest. Keep the counter visible even when you expect a
+single round.
 
 ## Step 3 — Implement
 
@@ -266,6 +286,24 @@ The code-review agent posts a PR review with `**Verdict: APPROVED**` or
 - **Minor** findings are non-blocking unless the human decides otherwise.
 - The implementer uses [receiving-code-review.md](references/receiving-code-review.md)
   to triage feedback rigorously rather than blindly applying suggestions.
+- The orchestrator tracks the code-review ↔ implement loop with a visible
+  counter (`Code-review fix round 1/3`, `2/3`, `3/3`). One round is one
+  code-review verdict plus the implementer's response/fix attempt. The loop is
+  capped at **max 3 rounds**; never request a fourth code-review pass for the
+  same unresolved Critical/Important findings.
+- If the implementation agent reports `BLOCKED` or `NEEDS_CONTEXT`, stop
+  immediately and escalate to the human instead of using another round.
+- If a round produces no substantive progress, stop early and escalate. Compare
+  the latest diff, implementer status, and review against the prior round: an
+  implementer making no material edit, or a reviewer repeating the same blocking
+  objection against an unchanged diff, is non-convergence. This is substantive
+  comparison, not exact text equality.
+- On cap hit, `BLOCKED`, `NEEDS_CONTEXT`, or no-progress, STOP and post a
+  concise PR comment prefixed, for example, `## ⛔ Escalation: code review did
+  not converge`. Summarize unresolved Critical/Important findings or the missing
+  context, include the final round counter when applicable, and hand off to the
+  human. Do not mark the PR ready until the human resolves or explicitly waives
+  the blockers.
 - The human gives final merge approval. An agent may prepare the PR, but it does
   not override human approval.
 
@@ -358,12 +396,13 @@ items across status columns and linking the project to the repo.
 | Default branch unprotected | Offer branch protection from [branch-protection.md](references/branch-protection.md); require consent before mutation |
 | >3 open issues | Create/append to a GitHub Project |
 | Multiple independent issues | Use worktrees via [worktrees.md](references/worktrees.md) |
-| Plan written | Hand to review agent; iterate until `Verdict: APPROVED` |
+| Plan written | Hand to review agent; track visible `Plan-review round N/3`; stop after max 3 rounds or no-progress and escalate to the human |
 | Approved plan | Dispatch implementation agent |
 | Step 3 branch cut | Move Project item to **In Progress** via [projects.md](references/projects.md); no-op cleanly if no Project exists or Project auth is unavailable |
 | Code done | Run verification, commit, open a draft PR |
 | Draft PR open | Dispatch 🔬 code-review agent; require a verdict |
-| Critical/Important review finding | Loop back to implementation; re-verify and re-review |
+| Implementer reports `BLOCKED` / `NEEDS_CONTEXT` | Stop the loop immediately; post the blocker/context gap and hand off to the human |
+| Critical/Important review finding | Loop back to implementation with visible `Code-review fix round N/3`; re-verify and re-review, but stop after max 3 rounds or no-progress and escalate |
 | PR ready to land | Require human approval and green `gh pr checks` when CI exists |
 | PR squash-merged | Move Project item to **Done** via [projects.md](references/projects.md); no-op cleanly if no Project exists or Project auth is unavailable |
 | PR merged | `--delete-branch`, sync `main`, confirm issue closed |

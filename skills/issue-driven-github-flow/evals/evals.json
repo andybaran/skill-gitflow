@@ -132,6 +132,20 @@
         "Asks for explicit consent before applying branch protection",
         "Does not mutate branch protection without consent"
       ]
+    },
+    {
+      "id": 9,
+      "name": "plan-review-nonconvergence-escalates",
+      "prompt": "Work on issue #42 where the review agent keeps rejecting the plan with the same unresolved objection.",
+      "expected_output": "Tracks the plan-review round count visibly, stops after no more than 3 review rounds, posts a concise escalation/hand-off comment to the issue summarizing the unresolved disagreement, and does not keep looping or start implementation without an approved plan.",
+      "files": [],
+      "assertions": [
+        "Orchestrator tracks the plan-review loop with a visible numeric counter",
+        "No more than 3 review-agent comments are posted for the non-converging plan",
+        "A final issue comment summarizes the unresolved disagreement and hands off to the human",
+        "The loop stops instead of requesting another planning/review round after the cap or no-progress guard",
+        "No implementation branch or PR is created without a review comment ending in 'Verdict: APPROVED'"
+      ]
     }
   ]
 }

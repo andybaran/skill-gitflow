@@ -15,6 +15,25 @@ cheaper/faster model is often enough for mechanical implementation of a reviewed
 plan, while planning and especially final diff review should use a stronger
 model when correctness, security, or architecture judgment matters.
 
+## Loop-bounding contract for the orchestrator
+
+The parent orchestrator must make both agent loops provably terminating:
+
+- Plan ↔ review is capped at **max 3 rounds**.
+- Code-review ↔ implement is capped at **max 3 rounds**.
+- Track each loop with a visible counter (`Plan-review round N/3` or
+  `Code-review fix round N/3`) in comments or dispatch notes; never start round
+  4.
+- `BLOCKED` and `NEEDS_CONTEXT` from the implementation agent short-circuit the
+  code-review loop immediately; do not spend another round.
+- Apply the no-progress guard before the cap: compare the latest plan/diff/review
+  to the prior round for substantive change, not exact text equality. Repeated
+  objections or no material edit means non-convergence.
+- On cap hit, no-progress, `BLOCKED`, or `NEEDS_CONTEXT`, STOP and post a concise
+  issue/PR escalation comment summarizing the unresolved disagreement, findings,
+  or missing context, then hand off to the human. Never silently loop and never
+  silently give up.
+
 ---
 
 ## 🗺️ Planning agent
@@ -37,6 +56,10 @@ model when correctness, security, or architecture judgment matters.
 > 4. If you're revising after a review, address each point the reviewer raised
 >    explicitly, and post a new comment (don't edit the old one — the back-and-
 >    forth is the record).
+> 5. The orchestrator will label each attempt `Plan-review round N/3` and stop
+>    after max 3 rounds or earlier on no-progress. Make each revision
+>    substantively address the review; if you cannot resolve an objection, say so
+>    plainly so the orchestrator can escalate to the human instead of looping.
 >
 > Post with a quoted heredoc so your markdown (code fences, backticks, `$`)
 > isn't mangled by the shell:
@@ -66,6 +89,10 @@ model when correctness, security, or architecture judgment matters.
 >    actionable critique — cite files/lines. End with exactly one verdict line:
 >    - `**Verdict: APPROVED**` — the plan is sound and ready to implement.
 >    - `**Verdict: CHANGES REQUESTED**` — list what must change.
+> 4. The orchestrator caps plan ↔ review at max 3 rounds with a visible
+>    `Plan-review round N/3` counter. If the same unresolved objection repeats
+>    or the plan has not substantively changed, call out non-convergence clearly
+>    so the orchestrator can post the escalation/hand-off comment.
 >
 > Post with a quoted heredoc so your markdown (code fences, backticks, `$`)
 > isn't mangled by the shell:
@@ -100,13 +127,19 @@ model when correctness, security, or architecture judgment matters.
 >    improvising a different design — the plan was reviewed for a reason. If
 >    you're in over your head, stop and escalate with the specific uncertainty;
 >    don't invent a different architecture to keep moving.
-> 4. Write and RUN the automated test the plan called for; confirm it passes.
-> 5. Commit: `git add -A` then
+> 4. If you're fixing Critical/Important code-review findings, the orchestrator
+>    will label the attempt `Code-review fix round N/3` and stop after max 3
+>    rounds or earlier on no-progress. Make a substantive diff for each fix
+>    attempt. If you cannot safely proceed, return `BLOCKED`; if required context
+>    is missing, return `NEEDS_CONTEXT`. Those status codes immediately escalate
+>    to the human and must not burn another round.
+> 5. Write and RUN the automated test the plan called for; confirm it passes.
+> 6. Commit: `git add -A` then
 >    `scripts/gitflow.sh commit "<type(scope): summary>" {N}`
 >    (adds `Closes #{N}.`).
-> 6. Open the PR: `scripts/gitflow.sh pr "<conventional title>" {N}`
+> 7. Open the PR: `scripts/gitflow.sh pr "<conventional title>" {N}`
 >    (the title becomes the squash commit). Its test plan should describe the
->    green automated check from step 4, not a promise.
+>    green automated check from step 5, not a promise.
 >
 > Report the PR URL back. End with exactly one status code:
 > - `DONE` — implementation is complete, verified, committed, and the PR is open.
@@ -146,6 +179,11 @@ model when correctness, security, or architecture judgment matters.
 >    - `**Verdict: CHANGES REQUESTED**` — Critical or Important issues must be
 >      resolved, or explicitly waived by the human, before the PR may be marked
 >      ready or merged.
+> 6. The orchestrator caps code-review ↔ implement at max 3 rounds with a visible
+>    `Code-review fix round N/3` counter. If the same Critical/Important finding
+>    remains after a prior round, or the diff has not substantively changed,
+>    identify it as non-convergence so the orchestrator can post the
+>    escalation/hand-off comment instead of looping.
 >
 > Post with a quoted heredoc so your markdown (code fences, backticks, `$`)
 > isn't mangled by the shell:
