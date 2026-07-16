@@ -1,6 +1,6 @@
 # issue-driven-gitflow
 
-[![skills.sh](https://skills.sh/b/andybaran/skill-gitflow)](https://skills.sh/andybaran/skill-gitflow)
+[![skills.sh](https://img.shields.io/badge/skills.sh-issue--driven--gitflow-6c47ff)](https://skills.sh/andybaran/skill-gitflow)
 
 A reusable **agent skill** that enforces a disciplined, **issue-driven GitHub
 Flow**: nothing gets coded until there's a GitHub issue and a *reviewed,
