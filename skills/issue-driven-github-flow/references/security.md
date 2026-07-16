@@ -34,7 +34,18 @@ commits are blocked before they land:
 
 ```bash
 gh api --method PATCH repos/{owner}/{repo} \
-  -f security_and_analysis='{"secret_scanning":{"status":"enabled"},"secret_scanning_push_protection":{"status":"enabled"}}'
+  --input - <<'JSON'
+{
+  "security_and_analysis": {
+    "secret_scanning": {
+      "status": "enabled"
+    },
+    "secret_scanning_push_protection": {
+      "status": "enabled"
+    }
+  }
+}
+JSON
 ```
 
 Repository security settings may require admin permissions. Offer to apply them

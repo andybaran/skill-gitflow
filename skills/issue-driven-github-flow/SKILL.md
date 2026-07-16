@@ -249,6 +249,10 @@ head="$(git rev-parse HEAD)"
 skills/issue-driven-github-flow/scripts/gitflow.sh review-package "$base" "$head" .gitflow-review-package.txt
 ```
 
+`.gitflow-review-package.txt` is scratch review material, not source. Delete it
+before any later `git add -A` / commit in the re-review loop, or choose an
+explicit output path outside the working tree when your environment provides one.
+
 The code-review agent posts a PR review with `**Verdict: APPROVED**` or
 `**Verdict: CHANGES REQUESTED**`.
 
