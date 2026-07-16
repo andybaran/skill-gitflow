@@ -146,7 +146,7 @@ test_project_status_docs_are_wired_into_workflow() {
 
   assert_contains "$project_doc" 'gh project view <project-number> --owner "@me" --format json'
   assert_contains "$project_doc" 'gh project field-list <project-number> --owner "@me" --format json'
-  assert_contains "$project_doc" 'gh project item-list <project-number> --owner "@me" --format json'
+  assert_contains "$project_doc" 'gh project item-list <project-number> --owner "@me" --limit 100 --format json'
   assert_contains "$project_doc" 'gh project item-edit'
   assert_contains "$project_doc" '--project-id <project-id>'
   assert_contains "$project_doc" '--single-select-option-id <option-id>'

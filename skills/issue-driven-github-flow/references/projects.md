@@ -66,9 +66,9 @@ DONE_OPTION_ID="$(
 )"
 
 # Resolve the Project item id for this issue; map via .content.number.
-gh project item-list <project-number> --owner "@me" --format json
+gh project item-list <project-number> --owner "@me" --limit 100 --format json
 ITEM_ID="$(
-  gh project item-list "$PROJECT_NUMBER" --owner "$OWNER" --format json \
+  gh project item-list "$PROJECT_NUMBER" --owner "$OWNER" --limit 100 --format json \
     --jq ".items[] | select(.content.number == $ISSUE_NUMBER) | .id"
 )"
 
